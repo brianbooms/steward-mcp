@@ -119,6 +119,86 @@ tool call spends exactly what the rail quotes — nothing more.
 Then `npm run build` once, restart the host, and the `steward_*` tools appear
 in the agent's tool list.
 
+## Framework integrations
+
+Steward works natively with every major agent framework via MCP. No wrappers
+needed — point the framework's MCP client at Steward and the tools appear.
+
+### LangChain
+
+```python
+from langchain_mcp_adapters import MultiServerMCPClient
+
+client = MultiServerMCPClient({
+    "steward": {
+        "command": "npx",
+        "args": ["@brianbooms/steward-mcp"],
+        "env": {"STEWARD_PAYER_KEY": "0x..."},
+        "transport": "stdio",
+    }
+})
+tools = await client.get_tools()  # steward_* tools as LangChain StructuredTools
+```
+
+### LlamaIndex
+
+```python
+from llama_index.tools.mcp import BasicMCPClient, McpToolSpec
+
+mcp_client = BasicMCPClient(
+    command_or_url="npx",
+    args=["@brianbooms/steward-mcp"],
+    env={"STEWARD_PAYER_KEY": "0x..."},
+)
+tool_spec = McpToolSpec(client=mcp_client)
+tools = tool_spec.to_tool_list()
+```
+
+### CrewAI
+
+```python
+from crewai_tools import MCPServerAdapter
+
+with MCPServerAdapter(
+    command="npx",
+    args=["@brianbooms/steward-mcp"],
+    env={"STEWARD_PAYER_KEY": "0x..."},
+) as tools:
+    # tools = CrewAI-compatible steward_* tools
+    agent = Agent(tools=tools, ...)
+```
+
+### AutoGen / AG2
+
+```python
+from autogen_ext.tools.mcp import StdioServerParams, mcp_server_tools
+
+server_params = StdioServerParams(
+    command="npx",
+    args=["@brianbooms/steward-mcp"],
+    env={"STEWARD_PAYER_KEY": "0x..."},
+)
+tools = await mcp_server_tools(server_params)
+```
+
+### Vercel AI SDK
+
+```typescript
+import { createMCPClient } from "@ai-sdk/mcp";
+
+const mcpClient = await createMCPClient({
+  transport: {
+    type: "stdio",
+    command: "npx",
+    args: ["@brianbooms/steward-mcp"],
+    env: { STEWARD_PAYER_KEY: "0x..." },
+  },
+});
+
+const tools = await mcpClient.tools();
+// use with generateText({ model, tools, prompt })
+```
+
 ## How payment works
 
 1. Tool calls the rail endpoint with no payment.
