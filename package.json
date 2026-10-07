@@ -1,0 +1,50 @@
+{
+  "author": "Brian Booms (AI-assisted artist)",
+  "bin": {
+    "steward-mcp": "dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "viem": "^2.57.3",
+    "zod": "^4.6.5"
+  },
+  "description": "Steward MCP server \u2014 Brian Booms' x402 pay-per-call rail as MCP tools. $0.01 USDC on Base per call.",
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "mcp",
+    "x402",
+    "model-context-protocol",
+    "ai-agents",
+    "micropayments",
+    "base",
+    "usdc"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "name": "@brianbooms/steward-mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/brianbooms/steward-mcp.git"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "npx tsx src/index.ts",
+    "prepublishOnly": "npm run build",
+    "start": "node dist/index.js",
+    "test:quotes": "npx tsx test/quotes.test.ts"
+  },
+  "type": "module",
+  "version": "0.3.0"
+}
