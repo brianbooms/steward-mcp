@@ -18,13 +18,14 @@ const server = new McpServer({
   name: "steward",
   version: "0.3.0",
   description:
-    "Steward — Brian Booms' x402 pay-per-call rail. 24 tools: 14 paid calls " +
+    "Steward — Brian Booms' x402 pay-per-call rail. 25 tools: 14 paid calls " +
     "(eleven $0.01 data/audio calls, trust verify-status $0.01, trust " +
-    "agent-attestation and screen $0.02 each — all USDC on Base, settled from " +
-    "your own wallet) plus 10 free read-only tools: store discovery (catalog, " +
+    "agent-attestation and screen $0.02 each — all USDC on Base, quoted per " +
+    "call by the rail and settled from your own wallet after quote " +
+    "verification) plus 11 free read-only tools: store discovery (catalog, " +
     "product, purchase instructions, rewards, payment guide), fee oracle " +
-    "(cheapest route, fee table), receipts, verifier pubkey, and the 57-merchant " +
-    "Steward directory.",
+    "(cheapest route, fee table), receipts, local spend meter, verifier " +
+    "pubkey, and the 57-merchant Steward directory.",
 });
 
 for (const tool of TOOLS) {
@@ -37,7 +38,10 @@ for (const tool of TOOLS) {
 // Read-only status tool (free, local): today's metered spend through this server.
 server.tool(
   "steward_spend_today",
-  "How much this Steward MCP server has spent today (local meter, USDC). Free, no rail call.",
+  "This server's local spend meter: USDC spent through this process today. " +
+    "In-memory and per-process (resets on restart) — a safety rail, not " +
+    "accounting; the rail's receipts (steward_receipts) are the source of " +
+    "truth for settled spend. Free, no rail call.",
   {},
   async () => ({
     content: [

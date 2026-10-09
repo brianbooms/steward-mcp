@@ -8,7 +8,7 @@
     "viem": "^2.57.3",
     "zod": "^4.6.5"
   },
-  "description": "Steward MCP server \u2014 Brian Booms' x402 pay-per-call rail as MCP tools. $0.01 USDC on Base per call.",
+  "description": "Steward MCP server — Brian Booms' x402 pay-per-call rail as MCP tools. $0.01 USDC on Base per call.",
   "devDependencies": {
     "@types/node": "^26.6.4",
     "tsx": "^4.23.15",
@@ -34,6 +34,7 @@
   "license": "MIT",
   "main": "dist/index.js",
   "name": "@brianbooms/steward-mcp",
+  "mcpName": "io.github.brianbooms/steward-mcp",
   "repository": {
     "type": "git",
     "url": "https://github.com/brianbooms/steward-mcp.git"
@@ -46,5 +47,5 @@
     "test:quotes": "npx tsx test/quotes.test.ts"
   },
   "type": "module",
-  "version": "0.3.0"
+  "version": "0.3.1"
 }

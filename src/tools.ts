@@ -30,8 +30,8 @@ export interface ToolDef {
 }
 
 const latLon = {
-  lat: z.number().min(-90).max(90).describe("Latitude in decimal degrees."),
-  lon: z.number().min(-180).max(180).describe("Longitude in decimal degrees."),
+  lat: z.number().min(-90).max(90).describe("Latitude in decimal degrees, -90 to 90 (e.g. 30.27 for Austin, TX)."),
+  lon: z.number().min(-180).max(180).describe("Longitude in decimal degrees, -180 to 180 (e.g. -97.74 for Austin, TX)."),
 };
 
 function textResult(r: RailResult) {
@@ -81,8 +81,13 @@ export const TOOLS: ToolDef[] = [
   {
     name: "steward_weather",
     description:
-      "Current weather plus a 7-day forecast for a latitude/longitude — trip planning, " +
-      "event scheduling, or any location-aware task. $0.01 USDC on Base per call.",
+      "Current conditions plus a 7-day forecast for any latitude/longitude — trip " +
+      "planning, event scheduling, or location-aware task prep. Use this for weather; " +
+      "use steward_iss_pass for satellite flyovers at the same coordinates. " +
+      "Paid: $0.01 USDC on Base per call — the rail quotes each call via 402; this " +
+      "server verifies the quote (exact scheme, Base network, USDC, Steward payee) " +
+      "and settles from your wallet automatically, refusing quotes over your " +
+      "per-call or daily spend caps. Your payer key never leaves your machine.",
     schema: { ...latLon },
     run: (cfg, a) =>
       callRail(cfg, "/api/v1/data/weather", {
@@ -92,10 +97,15 @@ export const TOOLS: ToolDef[] = [
   {
     name: "steward_joke",
     description:
-      "One clean original joke from the Synthetic Universe — family-friendly humor, " +
-      "pure compute, no upstream. Optional session id avoids repeats. $0.01 USDC on Base per call.",
+      "One clean, original, family-friendly joke from the Synthetic Universe — " +
+      "computed on the rail, no third-party upstream. Pass a session id to avoid " +
+      "repeats within a session; omit it for a one-off joke. Paid: $0.01 USDC on " +
+      "Base per call — the rail quotes each call via 402; this server verifies " +
+      "the quote (exact scheme, Base network, USDC, Steward payee) and settles " +
+      "from your wallet automatically, refusing quotes over your per-call or " +
+      "daily spend caps. Your payer key never leaves your machine.",
     schema: {
-      session: z.string().max(64).optional().describe("Optional session id to avoid repeat jokes."),
+      session: z.string().max(64).optional().describe("Optional session id (up to 64 chars) — jokes will not repeat within the same session id."),
     },
     run: (cfg, a) =>
       callRail(cfg, "/api/v1/data/joke", {
@@ -105,10 +115,16 @@ export const TOOLS: ToolDef[] = [
   {
     name: "steward_fortune",
     description:
-      "One warm original fortune — a lucky number (1-99) and a calm word from the " +
-      "Synthetic Universe. Pure compute, no upstream. $0.01 USDC on Base per call.",
+      "One warm, original fortune — a lucky number (1-99) plus a calm word from " +
+      "the Synthetic Universe. Computed on the rail, no third-party upstream. " +
+      "Fortunes, not jokes: for humor use steward_joke instead. Pass a session " +
+      "id to avoid repeats within a session. Paid: $0.01 USDC on Base per call — " +
+      "the rail quotes each call via 402; this server verifies the quote (exact " +
+      "scheme, Base network, USDC, Steward payee) and settles from your wallet " +
+      "automatically, refusing quotes over your per-call or daily spend caps. " +
+      "Your payer key never leaves your machine.",
     schema: {
-      session: z.string().max(64).optional().describe("Optional session id to avoid repeats."),
+      session: z.string().max(64).optional().describe("Optional session id (up to 64 chars) — fortunes will not repeat within the same session id."),
     },
     run: (cfg, a) =>
       callRail(cfg, "/api/v1/data/fortune", {
@@ -118,12 +134,17 @@ export const TOOLS: ToolDef[] = [
   {
     name: "steward_fx",
     description:
-      "Fiat currency conversion at current reference rates — pricing, payouts, or " +
-      "multi-currency accounting. Pass amount plus from/to currency codes. $0.01 USDC on Base per call.",
+      "Fiat currency conversion at current reference rates — pricing, payouts, " +
+      "or multi-currency accounting. Reference rates only, not execution quotes; " +
+      "for crypto transfer fees use steward_cheapest_route instead. Paid: $0.01 " +
+      "USDC on Base per call — the rail quotes each call via 402; this server " +
+      "verifies the quote (exact scheme, Base network, USDC, Steward payee) and " +
+      "settles from your wallet automatically, refusing quotes over your " +
+      "per-call or daily spend caps. Your payer key never leaves your machine.",
     schema: {
-      amount: z.number().positive().describe("Amount to convert."),
-      from: z.string().length(3).describe("Source currency code, e.g. USD."),
-      to: z.string().length(3).describe("Target currency code, e.g. EUR."),
+      amount: z.number().positive().describe("Amount to convert, must be positive (e.g. 99.99)."),
+      from: z.string().length(3).describe("Source currency as a 3-letter ISO 4217 code, e.g. USD. Case-insensitive; uppercased automatically."),
+      to: z.string().length(3).describe("Target currency as a 3-letter ISO 4217 code, e.g. EUR. Case-insensitive; uppercased automatically."),
     },
     run: (cfg, a) =>
       callRail(cfg, "/api/v1/data/fx", {
@@ -138,27 +159,43 @@ export const TOOLS: ToolDef[] = [
     name: "steward_time",
     description:
       "Current local time in any IANA time zone — scheduling, reminders, or " +
-      "market-window checks. Computed locally, no upstream to fail. $0.01 USDC on Base per call.",
+      "market-window checks. Computed on the rail with no third-party upstream " +
+      "to fail. Paid: $0.01 USDC on Base per call — the rail quotes each call " +
+      "via 402; this server verifies the quote (exact scheme, Base network, " +
+      "USDC, Steward payee) and settles from your wallet automatically, refusing " +
+      "quotes over your per-call or daily spend caps. Your payer key never " +
+      "leaves your machine.",
     schema: {
-      tz: z.string().max(64).describe("IANA time zone, e.g. America/Chicago."),
+      tz: z.string().max(64).describe("IANA time zone name, e.g. America/Chicago, Europe/London, Asia/Tokyo."),
     },
     run: (cfg, a) => callRail(cfg, "/api/v1/data/time", { query: { tz: String(a.tz) } }),
   },
   {
     name: "steward_wiki",
     description:
-      "Concise Wikipedia summary for an article topic — quick research context for " +
-      "agents. Pass the article title. $0.01 USDC on Base per call.",
+      "Concise summary of a Wikipedia article — quick research context for " +
+      "agents. Pass the article title as-is; the rail resolves it. For buying " +
+      "Brian Booms products use steward_catalog, not this tool. Paid: $0.01 " +
+      "USDC on Base per call — the rail quotes each call via 402; this server " +
+      "verifies the quote (exact scheme, Base network, USDC, Steward payee) and " +
+      "settles from your wallet automatically, refusing quotes over your " +
+      "per-call or daily spend caps. Your payer key never leaves your machine.",
     schema: {
-      topic: z.string().min(1).max(200).describe("Wikipedia article title."),
+      topic: z.string().min(1).max(200).describe("Wikipedia article title, 1-200 chars (e.g. 'Mona Lisa')."),
     },
     run: (cfg, a) => callRail(cfg, "/api/v1/data/wiki", { query: { topic: String(a.topic) } }),
   },
   {
     name: "steward_iss_pass",
     description:
-      "Upcoming visible ISS flyover times for a location — computed from public " +
-      "CelesTrak orbital data. $0.01 USDC on Base per call.",
+      "Upcoming visible ISS flyover times for a location, computed from public " +
+      "CelesTrak orbital data — skywatching or satellite-aware scheduling. " +
+      "Location-only sibling of steward_weather: weather for conditions, this " +
+      "for flyovers. Paid: $0.01 USDC on Base per call — the rail quotes each " +
+      "call via 402; this server verifies the quote (exact scheme, Base " +
+      "network, USDC, Steward payee) and settles from your wallet automatically, " +
+      "refusing quotes over your per-call or daily spend caps. Your payer key " +
+      "never leaves your machine.",
     schema: { ...latLon },
     run: (cfg, a) =>
       callRail(cfg, "/api/v1/data/iss-pass", {
@@ -168,10 +205,18 @@ export const TOOLS: ToolDef[] = [
   {
     name: "steward_audio_match",
     description:
-      "Match an emotion or moment to the right Brian Booms track — the moat. " +
-      "Describe the feeling or occasion; get back a track recommendation. $0.01 USDC on Base per call.",
+      "Recommend the right Brian Booms track for an emotion, moment, or occasion " +
+      "— describe the feeling ('a quiet rainy evening', 'pre-workout energy') " +
+      "and get back a matching track recommendation. This is the discovery " +
+      "tool: use it when you don't know which track fits. For ready-made " +
+      "listening lanes use steward_audio_rest (wind-down) or " +
+      "steward_audio_focus (deep work) instead. Paid: $0.01 USDC on Base per " +
+      "call — the rail quotes each call via 402; this server verifies the " +
+      "quote (exact scheme, Base network, USDC, Steward payee) and settles from " +
+      "your wallet automatically, refusing quotes over your per-call or daily " +
+      "spend caps. Your payer key never leaves your machine.",
     schema: {
-      mood: z.string().min(1).max(200).describe("Emotion, moment, or occasion to match."),
+      mood: z.string().min(1).max(200).describe("Emotion, moment, or occasion to match, 1-200 chars (e.g. 'calm focus before a big meeting')."),
     },
     run: (cfg, a) =>
       callRail(cfg, "/api/v1/audio/match", { method: "POST", body: { mood: a.mood } }),
@@ -179,9 +224,17 @@ export const TOOLS: ToolDef[] = [
   {
     name: "steward_audio_rest",
     description:
-      "Wind-down audio lane — calm soundscapes for rest and recovery. $0.01 USDC on Base per call.",
+      "Wind-down audio lane — calm Brian Booms soundscapes for rest and " +
+      "recovery. Choose this for sleep and relaxation; choose " +
+      "steward_audio_focus for deep work, or steward_audio_match when you want " +
+      "a track picked for a specific mood. Optional length in minutes (1-120); " +
+      "omit for the rail default. Paid: $0.01 USDC on Base per call — the rail " +
+      "quotes each call via 402; this server verifies the quote (exact scheme, " +
+      "Base network, USDC, Steward payee) and settles from your wallet " +
+      "automatically, refusing quotes over your per-call or daily spend caps. " +
+      "Your payer key never leaves your machine.",
     schema: {
-      minutes: z.number().int().min(1).max(120).optional().describe("Desired length in minutes."),
+      minutes: z.number().int().min(1).max(120).optional().describe("Desired wind-down length in minutes, 1-120. Omit for the rail default."),
     },
     run: (cfg, a) =>
       callRail(cfg, "/api/v1/audio/rest", {
@@ -192,9 +245,17 @@ export const TOOLS: ToolDef[] = [
   {
     name: "steward_audio_focus",
     description:
-      "Focus audio lane — steady soundscapes for deep work. $0.01 USDC on Base per call.",
+      "Focus audio lane — steady Brian Booms soundscapes for deep work and " +
+      "concentration. Choose this for working; choose steward_audio_rest for " +
+      "winding down, or steward_audio_match when you want a track picked for a " +
+      "specific mood. Optional length in minutes (1-120); omit for the rail " +
+      "default. Paid: $0.01 USDC on Base per call — the rail quotes each call " +
+      "via 402; this server verifies the quote (exact scheme, Base network, " +
+      "USDC, Steward payee) and settles from your wallet automatically, " +
+      "refusing quotes over your per-call or daily spend caps. Your payer key " +
+      "never leaves your machine.",
     schema: {
-      minutes: z.number().int().min(1).max(120).optional().describe("Desired length in minutes."),
+      minutes: z.number().int().min(1).max(120).optional().describe("Desired focus-session length in minutes, 1-120. Omit for the rail default."),
     },
     run: (cfg, a) =>
       callRail(cfg, "/api/v1/audio/focus", {
@@ -205,10 +266,15 @@ export const TOOLS: ToolDef[] = [
   {
     name: "steward_sleep_tip",
     description:
-      "One genuine sleep-hygiene tip from Brian Booms' rotating collection — practical " +
-      "habits, no medical claims. Rotates daily; pass index for a specific tip. $0.01 USDC on Base per call.",
+      "One genuine sleep-hygiene tip from Brian Booms' rotating collection of " +
+      "12 — practical habits, never medical claims. Omit the index for today's " +
+      "rotating tip; pass 0-11 for a specific one. Paid: $0.01 USDC on Base per " +
+      "call — the rail quotes each call via 402; this server verifies the " +
+      "quote (exact scheme, Base network, USDC, Steward payee) and settles from " +
+      "your wallet automatically, refusing quotes over your per-call or daily " +
+      "spend caps. Your payer key never leaves your machine.",
     schema: {
-      index: z.number().int().min(0).max(11).optional().describe("Tip index 0-11; omit for today's tip."),
+      index: z.number().int().min(0).max(11).optional().describe("Tip index 0-11 for a specific tip; omit for today's rotating tip."),
     },
     run: (cfg, a) =>
       callRail(cfg, "/api/v1/data/sleep-tip", {
@@ -218,10 +284,13 @@ export const TOOLS: ToolDef[] = [
   {
     name: "steward_receipts",
     description:
-      "Public per-wallet receipts — look up any wallet's settled Steward calls. " +
-      "Free, no payment required. This is the trust tool: every cent accounted for, in the open.",
+      "Public per-wallet receipts for settled Steward calls — look up any EVM " +
+      "wallet and see every cent it paid, in the open. Use this to verify a " +
+      "payment actually settled. This is on-rail history and the source of " +
+      "truth for settled spend; for this server's own local meter see " +
+      "steward_spend_today. Free, read-only — never signs or spends.",
     schema: {
-      wallet: z.string().regex(/^0x[0-9a-fA-F]{40}$/).describe("EVM wallet address to look up."),
+      wallet: z.string().regex(/^0x[0-9a-fA-F]{40}$/).describe("EVM wallet address to look up, 0x-prefixed 40-hex chars (e.g. 0xa98e8c6cbc64b7bb30fd0d2015ab24814c661839)."),
     },
     run: (cfg, a) =>
       callRail(cfg, "/api/v1/receipts", { query: { wallet: String(a.wallet) } }),
@@ -236,9 +305,13 @@ export const TOOLS: ToolDef[] = [
   {
     name: "steward_catalog",
     description:
-      "List everything buyable from Brian Booms — ambient music, ringtones, " +
-      "wallpapers, track leases, game licenses, commissions. Returns sku, name, " +
-      "and USD price for all products. Live catalog, free, read-only.",
+      "List everything buyable from Brian Booms — 29 products: ambient music, " +
+      "ringtones, wallpapers, track leases, game licenses, commissions. " +
+      "Returns sku, name, and USD price per product. Start any purchase flow " +
+      "here, then use steward_product for details on one item or " +
+      "steward_purchase_instructions for its live payment requirements. This " +
+      "lists WHAT Brian Booms sells; for the merchant directory (who sells) " +
+      "see steward_directory. Free, read-only — never signs or spends.",
     schema: {},
     run: async () => {
       const items = await fetchCatalog();
@@ -257,10 +330,12 @@ export const TOOLS: ToolDef[] = [
   {
     name: "steward_product",
     description:
-      "Full details for one product: description, price, delivery, and buy URL. " +
-      "Free, read-only.",
+      "Full details for one catalog product: description, USD price, delivery " +
+      "method, and buy URL. Use after steward_catalog to zoom in on a single " +
+      "sku; when ready to pay, call steward_purchase_instructions for the live " +
+      "x402 quote. Free, read-only — never signs or spends.",
     schema: {
-      sku: z.string().min(1).max(128).describe("Product SKU from steward_catalog."),
+      sku: z.string().min(1).max(128).describe("Product sku exactly as returned by steward_catalog (e.g. 'data-affirmation')."),
     },
     run: async (_cfg, a) => {
       const sku = String(a.sku);
@@ -289,10 +364,12 @@ export const TOOLS: ToolDef[] = [
     description:
       "Exact x402 payment requirements for buying a product: pay-to address, " +
       "amount, asset, network, and facilitator — parsed live from the product's " +
-      "402 response. Your agent pays with its own x402/EVM wallet, then downloads " +
-      "instantly. Free, read-only (reads the 402, never pays it).",
+      "402 response. Find the sku with steward_catalog first. Your agent pays " +
+      "with its own x402/EVM wallet, then downloads instantly. Free, read-only " +
+      "(reads the 402, never pays it). If the agent pays through this server's " +
+      "paid tools instead, no manual payment step is needed.",
     schema: {
-      sku: z.string().min(1).max(128).describe("Product SKU from steward_catalog."),
+      sku: z.string().min(1).max(128).describe("Product sku exactly as returned by steward_catalog (e.g. 'data-affirmation')."),
     },
     run: async (_cfg, a) => {
       const sku = String(a.sku);
@@ -342,8 +419,11 @@ export const TOOLS: ToolDef[] = [
   {
     name: "steward_rewards",
     description:
-      "How Booms Rewards works for buyers and for merchants: earn rates, referral " +
-      "rates, and how a store joins free. Free, read-only.",
+      "How Booms Rewards works: earn rates for buyers, referral rates, and how " +
+      "a store joins free. Read this before buying through " +
+      "steward_purchase_instructions so you know the credit you'll earn, or " +
+      "before enrolling a store as a merchant. Free, read-only — never signs " +
+      "or spends.",
     schema: {},
     run: async () => ({
       ok: true,
@@ -365,8 +445,10 @@ export const TOOLS: ToolDef[] = [
     name: "steward_payment_format",
     description:
       "Byte-exact guide to constructing a valid X-PAYMENT header for x402 v1 " +
-      "(EVM, USDC on Base). Call this BEFORE an agent's first payment attempt — " +
-      "most failed payments are header-format errors this guide prevents. Free, read-only.",
+      "(EVM, USDC on Base). Call this BEFORE an agent's first self-paid " +
+      "purchase via steward_purchase_instructions — most failed payments are " +
+      "header-format errors this guide prevents. Free, read-only — never signs " +
+      "or spends.",
     schema: {},
     run: async () => ({
       ok: true,
@@ -421,22 +503,24 @@ export const TOOLS: ToolDef[] = [
   {
     name: "steward_cheapest_route",
     description:
-      "Find the cheapest route for a crypto transfer of amount_usd USD. Compares " +
-      "6 routes (USDC on Base, Solana, Polygon, Arbitrum, Avalanche C-chain, and BTC) " +
-      "using live fee data; returns the ranked list plus the cheapest route. " +
-      "Read-only, neutral, no wallet, no custody. Free.",
+      "Cheapest of 6 crypto transfer routes for a USD amount — USDC on Base, " +
+      "Solana, Polygon, Arbitrum, Avalanche C-chain, and BTC — ranked with " +
+      "live fee data. Returns the ranked list plus the single cheapest route. " +
+      "Use this for a quick answer; use steward_route_fees for the full fee " +
+      "table. Advisory only: neutral ranking, no wallet, no custody, moves " +
+      "nothing. Free, read-only.",
     schema: {
       amount_usd: z
         .number()
         .min(1)
         .max(100000)
-        .describe("Transfer amount in USD (1–100000)."),
+        .describe("Transfer amount in USD, 1-100000 (e.g. 250)."),
       token: z
         .string()
         .min(1)
         .max(16)
         .optional()
-        .describe("Optionally filter to one token: USDC or BTC."),
+        .describe("Optional: restrict to one token — 'USDC' or 'BTC'. Omit to compare all routes."),
     },
     run: (cfg, a) => {
       const query: Record<string, string> = { amount_usd: String(a.amount_usd) };
@@ -447,22 +531,25 @@ export const TOOLS: ToolDef[] = [
   {
     name: "steward_route_fees",
     description:
-      "Full ranked fee table for all 6 routes (USDC on Base, Solana, Polygon, " +
-      "Arbitrum, Avalanche C-chain, and BTC) for a transfer of amount_usd USD. " +
-      "Each route carries fee_usd, total_usd, and fee_source (live or typical) " +
-      "verbatim from the API. Read-only, neutral, no wallet, no custody. Free.",
+      "Full ranked fee table for all 6 crypto transfer routes (USDC on Base, " +
+      "Solana, Polygon, Arbitrum, Avalanche C-chain, and BTC) for a USD " +
+      "amount. Each route carries fee_usd, total_usd, and fee_source (live or " +
+      "typical) verbatim from the API. Use this for the complete comparison; " +
+      "use steward_cheapest_route when you only need the winner. Advisory " +
+      "only: neutral ranking, no wallet, no custody, moves nothing. Free, " +
+      "read-only.",
     schema: {
       amount_usd: z
         .number()
         .min(1)
         .max(100000)
-        .describe("Transfer amount in USD (1–100000)."),
+        .describe("Transfer amount in USD, 1-100000 (e.g. 250)."),
       token: z
         .string()
         .min(1)
         .max(16)
         .optional()
-        .describe("Optionally filter to one token: USDC or BTC."),
+        .describe("Optional: restrict to one token — 'USDC' or 'BTC'. Omit to compare all routes."),
     },
     run: (cfg, a) => {
       const query: Record<string, string> = { amount_usd: String(a.amount_usd) };
@@ -483,13 +570,18 @@ export const TOOLS: ToolDef[] = [
   {
     name: "trust_verify_status",
     description:
-      "Check whether a domain is Steward Verified: returns verification status, " +
-      "method, issuance/expiry, and endpoint count. Read-only, advisory — it " +
-      "reports status, never issues verification. $0.01 USDC on Base per lookup, " +
-      "paid via x402 (rail returns a 402 quote; this server verifies and settles " +
-      "from your wallet automatically).",
+      "Check whether a domain is Steward Verified: returns verification " +
+      "status, method, issuance/expiry, and endpoint count. Read-only and " +
+      "advisory — it reports status; verification is never issued here and can " +
+      "never be purchased. Use before trusting a merchant domain; for agent " +
+      "counterparties use trust_agent_attestation; for a pay/no-pay decision " +
+      "use trust_screen. Paid: $0.01 USDC on Base per lookup — the rail quotes " +
+      "each call via 402; this server verifies the quote (exact scheme, Base " +
+      "network, USDC, Steward payee) and settles from your wallet automatically, " +
+      "refusing quotes over your per-call or daily spend caps. Your payer key " +
+      "never leaves your machine.",
     schema: {
-      domain: z.string().min(1).max(253).describe("Domain to check, e.g. pay.brianbooms.com."),
+      domain: z.string().min(1).max(253).describe("Domain to check, without scheme (e.g. pay.brianbooms.com). Lowercased automatically."),
     },
     run: (cfg, a) =>
       callRail(cfg, "/api/v1/trust/verify-status", {
@@ -500,23 +592,27 @@ export const TOOLS: ToolDef[] = [
   {
     name: "trust_agent_attestation",
     description:
-      "Attestation signals for an agent wallet or identifier: operator " +
-      "verification status plus observed on-rail payment history. Read-only, " +
-      "advisory — signals only, never a guarantee of trustworthiness. $0.02 USDC " +
-      "on Base per attestation, paid via x402 (rail returns a 402 quote; this " +
-      "server verifies and settles from your wallet automatically).",
+      "Attestation signals for an agent: operator verification status plus " +
+      "observed on-rail payment history for the given wallet or identifier. " +
+      "Read-only and advisory — signals only, never a guarantee of " +
+      "trustworthiness. For domains use trust_verify_status; for a " +
+      "pre-payment decision use trust_screen. Paid: $0.02 USDC on Base per " +
+      "attestation — the rail quotes each call via 402; this server verifies " +
+      "the quote (exact scheme, Base network, USDC, Steward payee) and settles " +
+      "from your wallet automatically, refusing quotes over your per-call or " +
+      "daily spend caps. Your payer key never leaves your machine.",
     schema: {
       agent: z
         .string()
         .min(1)
         .max(128)
-        .describe("Agent identifier: EVM address, Solana address, or 1-128 char id."),
+        .describe("Agent identifier: EVM address, Solana address, or a 1-128 char id."),
       operator_domain: z
         .string()
         .min(1)
         .max(253)
         .optional()
-        .describe("Optional operator domain to cross-check for Steward Verified status."),
+        .describe("Optional operator domain to cross-check against Steward Verified status (e.g. example.com)."),
     },
     run: (cfg, a) => {
       const body: Record<string, string> = { agent: String(a.agent).trim() };
@@ -527,29 +623,33 @@ export const TOOLS: ToolDef[] = [
   {
     name: "trust_screen",
     description:
-      "Pre-payment counterparty screen: deterministic approve/review/decline for " +
-      "an agent and a candidate USDC amount, from the agent's attestation. " +
-      "ADVISORY ONLY — never a guarantee; on lookup failure it fails open to " +
-      "\"review\", never an automatic decline. $0.02 USDC on Base per screen, " +
-      "paid via x402 (rail returns a 402 quote; this server verifies and settles " +
-      "from your wallet automatically).",
+      "Pre-payment counterparty screen: deterministic approve / review / " +
+      "decline for an agent and a candidate USDC amount, derived from the " +
+      "agent's attestation. ADVISORY ONLY — never a guarantee; on lookup " +
+      "failure it fails open to 'review', never an automatic decline. For the " +
+      "full signal details behind a screen, call trust_agent_attestation. " +
+      "Paid: $0.02 USDC on Base per screen — the rail quotes each call via " +
+      "402; this server verifies the quote (exact scheme, Base network, USDC, " +
+      "Steward payee) and settles from your wallet automatically, refusing " +
+      "quotes over your per-call or daily spend caps. Your payer key never " +
+      "leaves your machine.",
     schema: {
       agent: z
         .string()
         .min(1)
         .max(128)
-        .describe("Agent identifier: EVM address, Solana address, or 1-128 char id."),
+        .describe("Agent identifier to screen: EVM address, Solana address, or a 1-128 char id."),
       amount_usdc: z
         .number()
         .positive()
         .max(1000000)
-        .describe("Candidate payment amount in USDC."),
+        .describe("Candidate payment amount in USDC, positive, up to 1000000."),
       merchant_domain: z
         .string()
         .min(1)
         .max(253)
         .optional()
-        .describe("Optional merchant domain to include in the screen."),
+        .describe("Optional merchant domain to include in the screen (e.g. example.com)."),
     },
     run: (cfg, a) => {
       const body: Record<string, unknown> = {
@@ -563,21 +663,24 @@ export const TOOLS: ToolDef[] = [
   {
     name: "steward_verifier_pubkey",
     description:
-      "The Steward Verified issuer's Ed25519 public key (hex). Use it to " +
-      "independently verify any Steward Verified record's signature offline: the " +
-      "signature covers the canonical record (sorted keys, no whitespace, UTF-8) " +
-      "with signing_pubkey blanked. Free, read-only, no payment required.",
+      "Steward Verified issuer's Ed25519 public key (hex) — independently " +
+      "verify any Steward Verified record's signature offline: the signature " +
+      "covers the canonical record (sorted keys, no whitespace, UTF-8) with " +
+      "signing_pubkey blanked. Pair with trust_verify_status, which reports " +
+      "the status this key lets you verify yourself. Free, read-only — never " +
+      "signs or spends.",
     schema: {},
     run: (cfg) => callRail(cfg, "/api/v1/steward/verifier-pubkey"),
   },
   {
     name: "steward_directory",
     description:
-      "The Steward Standard merchant directory: all 57 x402 merchants ranked by " +
+      "The Steward Standard merchant directory: 57 x402 merchants ranked by " +
       "public merit score — liveness, volume, docs, endpoints, breadth, trust. " +
-      "Ranking is never for sale: no pay-to-rank, no sponsored slots, no partner " +
-      "override. Returns the full machine-readable directory. Free, read-only, " +
-      "no payment required.",
+      "Ranking is never for sale: no pay-to-rank, no sponsored slots, no " +
+      "partner override. This lists WHO sells (merchants); for WHAT Brian " +
+      "Booms sells use steward_catalog. Returns the full machine-readable " +
+      "directory. Free, read-only — never signs or spends.",
     schema: {},
     run: async () => {
       const items = await fetchStewardDirectory();
