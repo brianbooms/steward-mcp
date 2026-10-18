@@ -2,8 +2,10 @@
 
 Steward's x402 pay-per-call rail as [MCP](https://modelcontextprotocol.io/) tools.
 Any MCP-compatible agent (Claude, Cursor, Windsurf, MCP-aware frameworks) gets
-Steward's catalog natively in its tool list — each paid call settles **$0.01 USDC
+Steward's catalog natively in its tool list — each paid call settles **$0.01–$0.02 USDC
 on Base**, signed by your own wallet.
+
+**Current release: v0.3.1** — run it with `npx -y @brianbooms/steward-mcp` (25 tools: 14 paid + 11 free).
 
 Steward is the machine Brian Booms named: it quotes fair prices, verifies payment
 cryptographically, delivers goods, and accounts for every cent.
@@ -41,7 +43,7 @@ cryptographically, delivers goods, and accounts for every cent.
 
 | Tool | What it does | Source |
 |---|---|---|
-| `steward_catalog` | Live purchase catalog: sku, name, USD price (29 products) | brianbooms-mcp |
+| `steward_catalog` | Live purchase catalog: sku, name, USD price (32 catalog SKUs) | brianbooms-mcp |
 | `steward_product` | Full details for one SKU: description, price, delivery, buy URL | brianbooms-mcp |
 | `steward_purchase_instructions` | Exact x402 payment requirements parsed live from the product's 402 | brianbooms-mcp |
 | `steward_rewards` | How Booms Rewards works (buyers + merchants + agent enrollment) | brianbooms-mcp |
@@ -67,7 +69,13 @@ for history but are superseded — do not build on them:
 
 ## Install
 
-Requires Node 20+.
+Requires Node 20+. No install step — run the published package (v0.3.1):
+
+```bash
+npx -y @brianbooms/steward-mcp
+```
+
+From source (this repo):
 
 ```bash
 cd steward-mcp
@@ -102,8 +110,8 @@ tool call spends exactly what the rail quotes — nothing more.
 {
   "mcpServers": {
     "steward": {
-      "command": "node",
-      "args": ["/absolute/path/to/steward-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "@brianbooms/steward-mcp"],
       "env": {
         "STEWARD_PAYER_KEY": "0x...",
         "STEWARD_MAX_SPEND_USDC": "0.05",
@@ -116,13 +124,19 @@ tool call spends exactly what the rail quotes — nothing more.
 
 **Cursor** (`.cursor/mcp.json`): same shape under `"mcpServers"`.
 
-Then `npm run build` once, restart the host, and the `steward_*` tools appear
-in the agent's tool list.
+Restart the host, and the `steward_*` tools appear in the agent's tool list.
+Ready-to-paste configs for Claude Desktop, Cursor, Windsurf, Cline, and Codex: https://github.com/brianbooms/steward-examples
 
 ## Framework integrations
 
 Steward works natively with every major agent framework via MCP. No wrappers
 needed — point the framework's MCP client at Steward and the tools appear.
+
+Worked examples: [steward-examples](https://github.com/brianbooms/steward-examples) (index + client configs) ·
+[LlamaIndex](https://github.com/brianbooms/steward-llamaindex-example) ·
+[CrewAI](https://github.com/brianbooms/steward-crewai) ·
+[ElizaOS plugin](https://github.com/brianbooms/plugin-steward) ·
+[eval kit](https://github.com/brianbooms/steward-eval-kit)
 
 ### LangChain
 
@@ -132,7 +146,7 @@ from langchain_mcp_adapters import MultiServerMCPClient
 client = MultiServerMCPClient({
     "steward": {
         "command": "npx",
-        "args": ["@brianbooms/steward-mcp"],
+        "args": ["-y", "@brianbooms/steward-mcp"],
         "env": {"STEWARD_PAYER_KEY": "0x..."},
         "transport": "stdio",
     }
@@ -147,7 +161,7 @@ from llama_index.tools.mcp import BasicMCPClient, McpToolSpec
 
 mcp_client = BasicMCPClient(
     command_or_url="npx",
-    args=["@brianbooms/steward-mcp"],
+    args=["-y", "@brianbooms/steward-mcp"],
     env={"STEWARD_PAYER_KEY": "0x..."},
 )
 tool_spec = McpToolSpec(client=mcp_client)
@@ -161,7 +175,7 @@ from crewai_tools import MCPServerAdapter
 
 with MCPServerAdapter(
     command="npx",
-    args=["@brianbooms/steward-mcp"],
+    args=["-y", "@brianbooms/steward-mcp"],
     env={"STEWARD_PAYER_KEY": "0x..."},
 ) as tools:
     # tools = CrewAI-compatible steward_* tools
@@ -175,7 +189,7 @@ from autogen_ext.tools.mcp import StdioServerParams, mcp_server_tools
 
 server_params = StdioServerParams(
     command="npx",
-    args=["@brianbooms/steward-mcp"],
+    args=["-y", "@brianbooms/steward-mcp"],
     env={"STEWARD_PAYER_KEY": "0x..."},
 )
 tools = await mcp_server_tools(server_params)
@@ -190,7 +204,7 @@ const mcpClient = await createMCPClient({
   transport: {
     type: "stdio",
     command: "npx",
-    args: ["@brianbooms/steward-mcp"],
+    args: ["-y", "@brianbooms/steward-mcp"],
     env: { STEWARD_PAYER_KEY: "0x..." },
   },
 });
@@ -215,7 +229,7 @@ server refuses to sign. No silent spending, ever.
 ## Verify without paying
 
 ```bash
-npx tsx test/quotes.test.ts   # probes all 24 tools' live quotes, signs nothing
+npx tsx test/quotes.test.ts   # probes all 25 tools' live quotes, signs nothing
 npx tsx test/smoke.test.ts    # boots the MCP server, lists tools over stdio
 ```
 
